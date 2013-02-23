@@ -1,15 +1,12 @@
 #include <cucumber-cpp/internal/connectors/wire/WireServer.hpp>
+#include <cstdio>
 
 namespace cucumber {
 namespace internal {
 
-SocketServer::SocketServer(const ProtocolHandler *protocolHandler) :
-    ios(),
-    acceptor(ios),
-    protocolHandler(protocolHandler) {
-}
-
-void SocketServer::listen(const port_type port) {
+template <>
+template <>
+void SocketServer<boost::asio::ip::tcp>::listen(unsigned short const& port) {
     tcp::endpoint endpoint(tcp::v4(), port);
     acceptor.open(endpoint.protocol());
     acceptor.set_option(tcp::acceptor::reuse_address(true));
@@ -17,17 +14,14 @@ void SocketServer::listen(const port_type port) {
     acceptor.listen(1);
 }
 
-void SocketServer::acceptOnce() {
-    tcp::iostream stream;
-    acceptor.accept(*stream.rdbuf());
-    processStream(stream);
-}
-
-void SocketServer::processStream(tcp::iostream &stream) {
-    std::string request;
-    while (getline(stream, request)) {
-        stream << protocolHandler->handle(request) << std::endl << std::flush;
-    }
+template <>
+template <>
+void SocketServer<boost::asio::local::stream_protocol>::listen(std::string const& path) {
+	std::remove(path.c_str());
+	local::stream_protocol::endpoint endpoint(path);
+    acceptor.open(endpoint.protocol());
+    acceptor.bind(endpoint);
+    acceptor.listen(1);
 }
 
 }

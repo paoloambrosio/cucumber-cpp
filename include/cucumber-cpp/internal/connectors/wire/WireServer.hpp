@@ -16,37 +16,56 @@ using namespace boost::asio::ip;
 /**
  * Socket server that calls a protocol handler line by line
  */
+template <class Protocol=boost::asio::ip::tcp>
 class SocketServer {
 public:
     /**
-     * Type definition for TCP port
-     */
-    typedef unsigned short port_type;
-
-    /**
       * Constructor for DI
       */
-    SocketServer(const ProtocolHandler *protocolHandler);
+	SocketServer(const ProtocolHandler *protocolHandler) :
+		ios(),
+		acceptor(ios),
+		protocolHandler(protocolHandler) {
+		}
 
     /**
-     * Bind and listen to a TCP port
+     * Bind and listen to a port (or unix domain socket)
      */
-    void listen(const port_type port);
+	template <class Identifier>
+    void listen(Identifier const& port);
 
     /**
      * Accept one connection
      */
-    void acceptOnce();
+    void acceptOnce()
+	{
+		typename Protocol::iostream stream;
+		acceptor.accept(*stream.rdbuf());
+		processStream(stream);
+	}
 
     ~SocketServer() {}; // Forbid inheritance
 
 private:
     const ProtocolHandler *protocolHandler;
     io_service ios;
-    tcp::acceptor acceptor;
+    typename Protocol::acceptor acceptor;
 
-    void processStream(tcp::iostream &stream);
+	void processStream(typename Protocol::iostream &stream) {
+		std::string request;
+		while (getline(stream, request)) {
+			stream << protocolHandler->handle(request) << std::endl << std::flush;
+		}
+	}
 };
+
+template <>
+template <>
+void SocketServer<boost::asio::ip::tcp>::listen(unsigned short const& port);
+
+template <>
+template <>
+void SocketServer<boost::asio::local::stream_protocol>::listen(std::string const& path);
 
 }
 }
