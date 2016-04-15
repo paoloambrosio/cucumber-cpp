@@ -142,13 +142,13 @@ else()
     if(CUCUMBER_RUBY)
         message(STATUS "Found Cucumber")
         set(CUKE_FEATURES_DIR ${CMAKE_SOURCE_DIR}/features)
-        set(CUKE_FEATURES_TMP ${CMAKE_BINARY_DIR}/tmp)
-        set(CUKE_TEST_FEATURES_DIR ${CUKE_FEATURES_TMP}/test_features)
-        set(CUKE_DYNAMIC_CPP_STEPS ${CUKE_TEST_FEATURES_DIR}/step_definitions/cpp_steps.cpp)
-        string(REPLACE "/tmp" "${CMAKE_FILES_DIRECTORY}/e2e-steps.dir/tmp" CUKE_DYNAMIC_CPP_STEPS_OBJ "${CUKE_DYNAMIC_CPP_STEPS}${CMAKE_CXX_OUTPUT_EXTENSION}")
+        set(ARUBA_TMP ${CMAKE_BINARY_DIR}/tmp/aruba)
+        set(CUKE_TEST_FEATURES_DIR test_features)
+        set(CUKE_DYNAMIC_CPP_STEPS "${CUKE_TEST_FEATURES_DIR}/step_definitions/cpp_steps.cpp")
+        string(REPLACE "/tmp" "${CMAKE_FILES_DIRECTORY}/e2e-steps.dir/tmp" CUKE_DYNAMIC_CPP_STEPS_OBJ "${ARUBA_TMP}/${CUKE_DYNAMIC_CPP_STEPS}${CMAKE_CXX_OUTPUT_EXTENSION}")
 
-        file(WRITE ${CUKE_DYNAMIC_CPP_STEPS})
-        add_executable(e2e-steps EXCLUDE_FROM_ALL ${CUKE_DYNAMIC_CPP_STEPS})
+        file(WRITE ${ARUBA_TMP}/${CUKE_DYNAMIC_CPP_STEPS}) # to add executable with future sources
+        add_executable(e2e-steps EXCLUDE_FROM_ALL ${ARUBA_TMP}/${CUKE_DYNAMIC_CPP_STEPS})
         target_link_libraries(e2e-steps ${CUKE_LIBRARIES})
 
         # TODO It does not escape paths
@@ -157,14 +157,15 @@ else()
         function(add_feature_target TARGET_NAME)
             add_custom_target(${TARGET_NAME}
                 COMMAND ${CUCUMBER_RUBY}
-                TEST_FEATURES_DIR=${CUKE_TEST_FEATURES_DIR}
-                TMP_DIR=${CUKE_FEATURES_TMP}
-                DYNAMIC_CPP_STEPS_SRC=${CUKE_DYNAMIC_CPP_STEPS}
-                DYNAMIC_CPP_STEPS_EXE=${CMAKE_BINARY_DIR}/e2e-steps
-                DYNAMIC_CPP_STEPS_OBJ=${CUKE_DYNAMIC_CPP_STEPS_OBJ}
-                COMPILE_DYNAMIC_CPP_STEPS=${CUKE_COMPILE_DYNAMIC_CPP_STEPS}
-                ${ARGV1} ${ARGV2} ${ARGV3} ${ARGV4} ${ARGV5} ${ARGV6}
-                ${CUKE_FEATURES_DIR}
+                    TEST_FEATURES_DIR=${CUKE_TEST_FEATURES_DIR}
+                    TMP_DIR=${ARUBA_TMP}
+                    DYNAMIC_CPP_STEPS_SRC=${CUKE_DYNAMIC_CPP_STEPS}
+                    DYNAMIC_CPP_STEPS_EXE=${CMAKE_BINARY_DIR}/e2e-steps
+                    DYNAMIC_CPP_STEPS_OBJ=${CUKE_DYNAMIC_CPP_STEPS_OBJ}
+                    COMPILE_DYNAMIC_CPP_STEPS=${CUKE_COMPILE_DYNAMIC_CPP_STEPS}
+                    ${ARGV1} ${ARGV2} ${ARGV3} ${ARGV4} ${ARGV5} ${ARGV6}
+                    --require ${CUKE_FEATURES_DIR}
+                    ${CUKE_FEATURES_DIR}
                 DEPENDS cucumber-cpp
             )
         endfunction(add_feature_target)

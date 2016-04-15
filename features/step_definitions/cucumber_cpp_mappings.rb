@@ -320,7 +320,7 @@ EOF
   end
 
   def run_cucumber_test_feature(params)
-    run_simple "cucumber #{params} #{FEATURES_DIR}", false
+    run_simple "cucumber #{params} --require #{FEATURES_DIR} #{FEATURES_DIR}", false
   end
 end
 
